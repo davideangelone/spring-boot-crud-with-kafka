@@ -1,0 +1,4 @@
+from inside kafka container:
+
+kafka-topics.sh --delete --topic order-topic --bootstrap-server localhost:9092
+

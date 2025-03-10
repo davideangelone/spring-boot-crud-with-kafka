@@ -1,0 +1,102 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: Distributed
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: order-service-group
+      enable-auto-commit: false
+      properties:
+        auto.offset.reset: earliest
+        spring:
+          json:
+            trusted.packages: "com.example.demo.model"
+      value:
+        delegate:
+          deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+          trusted.packages: "com.example.demo.model"
+          use.type.headers: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orderdb
+    username: postgres
+    password: your_password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentService:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slidingWindowSize: 10
+        waitDurationInOpenState: 10000ms
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      inventoryService:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slidingWindowSize: 10
+        waitDurationInOpenState: 10000ms
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+  retry:
+    instances:
+      paymentService:
+        maxAttempts: 3
+        waitDuration: 2000ms
+        backoff:
+          delay: 1000ms
+          maxDelay: 5000ms
+          multiplier: 2
+      inventoryService:
+        maxAttempts: 3
+        waitDuration: 2000ms
+        backoff:
+          delay: 1000ms
+          maxDelay: 5000ms
+          multiplier: 2
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.springframework.kafka: INFO
+    org.apache.kafka: WARN
+
+# Define the Kafka topics (Optional, but useful for clarity)
+kafka:
+  topics:
+    order: "order-topic"
+    payment: "payment-topic"
+    inventory: "inventory-topic"
+
+# Custom application properties (Optional, depending on your needs)
+app:
+  name: "Distributed Transaction App"
+  version: "1.0.0"
